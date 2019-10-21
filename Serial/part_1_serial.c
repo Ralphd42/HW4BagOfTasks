@@ -1,9 +1,12 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include"timing.h"
 #define STRING_LENGTH 25
 #define FALSE  0
 #define TRUE 1
+const char *OutFileNM = "results";
+
 long long  getFileLength  ( FILE *file );
 long long  fillStringArray(FILE *file, char ** arr , long long flen);
 void  ShowArray (char ** arr, long long  len);
@@ -11,6 +14,9 @@ long long  getUsableFileLength( FILE *file );
 long long  fillStringArray_All(FILE *file, char ** arr , long long flen);
 int Unique( char * testString);
 void TestUnique(char ** arr, int arrsz);
+void getUniques( char ** data, int * uniqArr, int numItems);
+long long getCountUniqueSix(int * uniqArr,char ** dataArr, int numItems);
+
 int main( int argc, char *argv[] )  
 {
     char** inputData;
@@ -27,12 +33,16 @@ int main( int argc, char *argv[] )
     int * resultsArray = malloc(sizeof(int) * numStrings);
     printf("\n len = %lld\n",numStrings);
     fillStringArray(inFilep,inputData,numStrings);
-    //ShowArray(inputData,numStrings);
-    TestUnique(inputData,numStrings);
+    getUniques( inputData, resultsArray, numStrings);
+    long long itms =
+        getCountUniqueSix(resultsArray,inputData, numStrings);
 
 
+    printf( "\nUnique items with len greater than 6 %d\n",itms );
 
-
+    //getCountUniqueSix
+    free(inputData);
+    free(resultsArray);
     fclose(inFilep);
 }
 
@@ -118,7 +128,18 @@ int Unique( char * testString)
         }
     return retval;
 }
-
+void getUniques( char ** data, int * uniqArr, int numItems)
+{
+    int cnt ;
+    for (cnt =0; cnt< numItems; ++cnt)
+    {
+        int u =Unique(data[cnt]);                                       
+        if(u)
+        {
+            uniqArr[cnt]=strlen(data[cnt]);
+        }
+    }
+}
 
 
 /*
@@ -149,14 +170,22 @@ void TestUnique(char ** arr, int arrsz)
         
     }
     printf("END Items in array"   );
-
-
-
-
-
-
-
 }
-
+long long getCountUniqueSix(int * uniqArr,char ** dataArr, int numItems)
+{
+   FILE * outFilep = fopen(OutFileNM, "w");
+    long long numUniqueSix =0;
+    int cntr=0;
+    for (;cntr<numItems;++cntr)
+    {
+        if( uniqArr[cntr]>=6)
+        {
+            ++numUniqueSix;    
+            fprintf(outFilep,"%s\n",dataArr[cntr]);
+        }
+    }
+    fclose(outFilep);
+    return numUniqueSix;
+}
 
 
