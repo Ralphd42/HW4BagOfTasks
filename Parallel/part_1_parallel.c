@@ -25,13 +25,18 @@ typedef struct ThreadInfo
 {
     int threadID;
     long long itemCnt;
-    Task * tskBag;   
+    Task * tskBag; 
+    pthread_t thread;  
 }ThreadInfo;
 
 // mutexes for sychronization
 pthread_mutex_t sycnBagidx        = PTHREAD_MUTEX_INITIALIZER;
+
 // thread globals
 int curProcTask;
+
+// constants
+const char *OutFileNM = "results";
 
 // function prototypes
 long long  getFileLength  ( FILE *file );
@@ -44,19 +49,18 @@ void TestUnique(char ** arr, int arrsz);
 void getUniques( char ** data, int * uniqArr, int numItems);
 long long getCountUniqueSix(int * uniqArr,char ** dataArr, int numItems);
 void *ProcThread( void *arg);
-// constants
-const char *OutFileNM = "results";
+
 //main
 int main( int argc, char *argv[] )  
 {
-    if(argc<4)
+    if(argc<3)
     {
         perror("\nUsage ./part_1_parallel.out <inputfile.csv> <threadCount>\n");
         exit(-1);
     }
     int numThreads =atoi(argv[2]);
 
-    char** inputData;
+    char ** inputData;
     char * infile = argv[1];
     FILE * inFilep = fopen(infile, "r");
     long long  numStrings = getUsableFileLength(inFilep);
@@ -71,14 +75,32 @@ int main( int argc, char *argv[] )
     fillStringArray(inFilep,inputData,numStrings, TaskBag);
     timing_start();
     curProcTask=0;
+    ThreadInfo * threads = (ThreadInfo *)malloc (numThreads * sizeof(ThreadInfo));
+    int thcnt;
+    for(thcnt=0;thcnt<numThreads;++thcnt)
+    {
+        threads[thcnt].threadID = thcnt  ;
+        threads[thcnt].itemCnt  = 0      ;
+        threads[thcnt].tskBag   = TaskBag;
+        pthread_create(&threads[thcnt].thread,NULL,ProcThread ,(void *) &threads[thcnt] );
+    }
+    //join the threads
+    void *status;
+    for (thcnt =0; thcnt<numThreads;++thcnt)
+    {
+        pthread_join(threads[thcnt].thread, &status);
+    }
+    // get the count
+    // sum the items
+    long long sumAllThreads =0;
+    for (thcnt =0; thcnt<numThreads;++thcnt)
+    {
+        sumAllThreads += threads[thcnt].itemCnt   ;
+    }
+
+
     getUniques( inputData, resultsArray, numStrings);
-    
-     
-
-
     printf( "\nUnique items with len greater than 6 %lld\n" );
-
-    
     free(TaskBag);
     free(inputData);
     free(resultsArray);
@@ -179,6 +201,17 @@ int Unique( char * testString)
         }
     return retval;
 }
+/*
+    char ** data   -  strings from file  
+    int * uniqArr  -  the array with the unique data
+    int numItems   -  number of data ites
+
+    populates unique array with length of unique strings
+
+
+
+
+*/
 void getUniques( char ** data, int * uniqArr, int numItems)
 {
     int cnt ;
@@ -251,20 +284,17 @@ void *ProcThread( void *arg)
             hasTasks=FALSE;
             //process currprocTas.
             pthread_mutex_unlock(&sycnBagidx);
-
-            
         }else
         {
             int toproc = curProcTask;
             ++curProcTask;
             pthread_mutex_unlock(&sycnBagidx);
             // process toProc
-            int start = inParams->tskBag->StartPos;
-            for( ;start<= inParams->tskBag->EndPos;++start)
+            int start = inParams->tskBag[toproc].StartPos;
+            for( ;start<= inParams->tskBag[toproc].EndPos;++start)
             {
-                if(inParams->tskBag->uniqueCount[start]>=6)
+                if(inParams->tskBag[toproc].uniqueCount[start]>=6)
                 {
-
                     inParams->itemCnt++;
                 }
             }
