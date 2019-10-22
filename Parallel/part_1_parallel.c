@@ -9,7 +9,6 @@
 #define ASCTOIDX   97
 #define TASKBAGSZ  26
 // structs used in app
-
 // a task to be used in the task bag
 typedef struct Task
 {
@@ -19,7 +18,6 @@ typedef struct Task
     int * uniqueCount;
     char ** dataarr;
 }Task;
-
 // the info needed by a thread
 typedef struct ThreadInfo
 {
@@ -28,8 +26,7 @@ typedef struct ThreadInfo
     Task * tskBag; 
     pthread_t thread;  
 }ThreadInfo;
-
-// mutexes for sychronization
+// mutexes for thread  sychronization
 pthread_mutex_t sycnBagidx        = PTHREAD_MUTEX_INITIALIZER;
 
 // thread globals
@@ -73,6 +70,7 @@ int main( int argc, char *argv[] )
     int * resultsArray = malloc(sizeof(int) * numStrings);
     printf("\n len = %lld\n",numStrings);
     fillStringArray(inFilep,inputData,numStrings, TaskBag);
+    getUniques( inputData, resultsArray, numStrings);
     timing_start();
     curProcTask=0;
     ThreadInfo * threads = (ThreadInfo *)malloc (numThreads * sizeof(ThreadInfo));
@@ -84,12 +82,14 @@ int main( int argc, char *argv[] )
         threads[thcnt].tskBag   = TaskBag;
         pthread_create(&threads[thcnt].thread,NULL,ProcThread ,(void *) &threads[thcnt] );
     }
+
     //join the threads
     void *status;
     for (thcnt =0; thcnt<numThreads;++thcnt)
     {
         pthread_join(threads[thcnt].thread, &status);
     }
+
     // get the count
     // sum the items
     long long sumAllThreads =0;
@@ -97,10 +97,10 @@ int main( int argc, char *argv[] )
     {
         sumAllThreads += threads[thcnt].itemCnt   ;
     }
+    printf( "\nUnique items with len greater than 6 %lld\n", sumAllThreads );
 
-
-    getUniques( inputData, resultsArray, numStrings);
-    printf( "\nUnique items with len greater than 6 %lld\n" );
+    
+     
     free(TaskBag);
     free(inputData);
     free(resultsArray);
