@@ -162,8 +162,11 @@ long long  getUsableFileLength( FILE *file )
     
     fseek(file, 0, SEEK_SET);
     int cnt =0;
-    char word[25];
-    while (fgets(word,STRING_LENGTH,file))
+     
+    //while (fgets(word,STRING_LENGTH,file))
+    char * word = (char *)malloc(STRING_LENGTH * sizeof(char));
+      size_t size = STRING_LENGTH;
+    while (getline(&word,&size,file)>=0)
     {
         if( word[0]>=97 && word[0]<=122 )
         {
@@ -192,32 +195,38 @@ long long  fillStringArray_All(FILE *file, char ** arr , long long flen, Task * 
 ///Fill string array and TaskBag
 long long  fillStringArray(FILE *file, char ** arr , long long flen, Task * TskBg) 
 {
-
+    printf("flen %lld \n\n ", flen);
     fseek(file, 0, SEEK_SET);
     long long  i=0;
-    char word[25];
+    //char word[25];
     char currentchr ='a';
     TskBg[0].StartPos=0;
     TskBg[0].letter='a';
     int tbidx=0;
-    while((i<flen) && (fgets(word, STRING_LENGTH, file) )    ) 
+      size_t size = STRING_LENGTH;
+    char * word = (char *)malloc(STRING_LENGTH * sizeof(char));
+    while((i<flen) && (getline(&word,&size,file)>=0 )    ) 
 	{
         
         if( word[0]>=97 && word[0]<=122 )
         {
            
+          // printf("\n!!%s %c %c  \n", word,currentchr,word[0] );
             if( currentchr!= word[0])
             {    printf("\n%s %c %c %s \n", word,currentchr,word[0], arr[i-1]);
-                TskBg[tbidx].EndPos=(i-1);        
+                TskBg[tbidx].EndPos=(i-1);
+                         
                 currentchr = word[0];
                 tbidx = currentchr - ASCTOIDX;
                 TskBg[tbidx].StartPos=(i-1);
-            }strcpy(arr[i],word);
+                TskBg[tbidx].letter = currentchr;
+            }strncpy(arr[i],word,STRING_LENGTH);
             arr[i][strlen(arr[i]) - 1] = '\0';
             i++;
         }
     }
     TskBg[tbidx].EndPos=(i-1);
+    printf("flen %lld \n\n ", flen);
     return i;
 }
 
