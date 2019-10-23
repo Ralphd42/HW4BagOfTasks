@@ -48,6 +48,7 @@ void getUniques( char ** data, int * uniqArr, int numItems);
 long long getCountUniqueSix(int * uniqArr,char ** dataArr, int numItems);
 void *ProcThread( void *arg);
 void DisplayArray( FILE * outLocation, char ** arr,int * UniqueArr,  int DataLength, int dbg);
+int isLOwerCase(char* str);
 //main
 int main( int argc, char *argv[] )  
 {
@@ -162,13 +163,17 @@ long long  getUsableFileLength( FILE *file )
     
     fseek(file, 0, SEEK_SET);
     int cnt =0;
-     
+    int buffsz = 1028;
     //while (fgets(word,STRING_LENGTH,file))
-    char * word = (char *)malloc(STRING_LENGTH * sizeof(char));
-      size_t size = STRING_LENGTH;
+    char * word = (char *)malloc(buffsz * sizeof(char));
+      size_t size = buffsz;
     while (getline(&word,&size,file)>=0)
     {
-        if( word[0]>=97 && word[0]<=122 )
+        int len = strlen(word);
+        if( word[len-1] == '\n'  || word[len-1] == '\r')
+            word[len-1] = 0;
+        //if( word[0]>=97 && word[0]<=122 )
+        if(isLOwerCase(word)) 
         {
             ++cnt;
         }
@@ -195,6 +200,7 @@ long long  fillStringArray_All(FILE *file, char ** arr , long long flen, Task * 
 ///Fill string array and TaskBag
 long long  fillStringArray(FILE *file, char ** arr , long long flen, Task * TskBg) 
 {
+    int buffsz=1028;
     printf("flen %lld \n\n ", flen);
     fseek(file, 0, SEEK_SET);
     long long  i=0;
@@ -203,12 +209,14 @@ long long  fillStringArray(FILE *file, char ** arr , long long flen, Task * TskB
     TskBg[0].StartPos=0;
     TskBg[0].letter='a';
     int tbidx=0;
-      size_t size = STRING_LENGTH;
-    char * word = (char *)malloc(STRING_LENGTH * sizeof(char));
+      size_t size;// = buffsz;
+    char * word = (char *)malloc(buffsz * sizeof(char));
     while((i<flen) && (getline(&word,&size,file)>=0 )    ) 
 	{
-        
-        if( word[0]>=97 && word[0]<=122 )
+        int len = strlen(word);
+        if( word[len-1] == '\n' )
+            word[len-1] = 0;
+        if( isLOwerCase(word) )
         {
            
           // printf("\n!!%s %c %c  \n", word,currentchr,word[0] );
@@ -363,7 +371,23 @@ void DisplayArray( FILE * outLocation, char ** arr,int * UniqueArr,  int DataLen
         }
     }
 }
+int isLOwerCase(char* str) {
 
+    int   i;
+
+    int len = strlen(str);
+        if( str[len-1] == '\n' || str[len-1] == '\r')
+            str[len-1] = 0;
+    for (int i = 0; str[i] != '\0'; i++) {
+        if(!(str[i] >= 'a' && str[i] <= 'z'))
+        {
+           // printf("|%s-%c|\n", str, str[i]);
+            return FALSE;
+        }
+    }
+    return TRUE;
+
+}
 
 
 
