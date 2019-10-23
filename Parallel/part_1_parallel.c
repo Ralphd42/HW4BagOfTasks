@@ -22,7 +22,8 @@ typedef struct Task
 typedef struct ThreadInfo
 {
     int threadID;
-    long long itemCnt;
+    long long itemCnt6U;
+    long long itemCntAllU;
     Task * tskBag; 
     pthread_t thread;  
 }ThreadInfo;
@@ -46,61 +47,89 @@ void TestUnique(char ** arr, int arrsz);
 void getUniques( char ** data, int * uniqArr, int numItems);
 long long getCountUniqueSix(int * uniqArr,char ** dataArr, int numItems);
 void *ProcThread( void *arg);
-
+void DisplayArray( FILE * outLocation, char ** arr,int * UniqueArr,  int DataLength, int dbg);
 //main
 int main( int argc, char *argv[] )  
 {
+    printf("-1-\n\n");
+   
     if(argc<3)
     {
         perror("\nUsage ./part_1_parallel.out <inputfile.csv> <threadCount>\n");
         exit(-1);
     }
-    int numThreads =atoi(argv[2]);
-
+    printf(" %s %s %s\n\n",argv[0],argv[1],argv[2]);
+    
+    char* one = argv[2];
+    printf("-2a-");
+    int tst= atoi(one);
+    printf("-2b-");
+    //exit(-1);
+    int numThreads =tst;//atoi(argv[2]);
+    printf("-2-");
+    
     char ** inputData;
     char * infile = argv[1];
+    
     FILE * inFilep = fopen(infile, "r");
+    printf("in file = %s", infile);
+   
     long long  numStrings = getUsableFileLength(inFilep);
+     
     Task * TaskBag = malloc (26 * sizeof(Task) );
     inputData =malloc(sizeof(char*)*numStrings);
+    printf("-3-");
     for(long long  i=0;i<numStrings;i++)
     {
         inputData[i] = malloc(STRING_LENGTH*sizeof(char));
     }
+
     int * resultsArray = malloc(sizeof(int) * numStrings);
-    printf("\n len = %lld\n",numStrings);
+     
     fillStringArray(inFilep,inputData,numStrings, TaskBag);
+    printf("-5-");
     getUniques( inputData, resultsArray, numStrings);
     timing_start();
+    printf("-6-");
     curProcTask=0;
     ThreadInfo * threads = (ThreadInfo *)malloc (numThreads * sizeof(ThreadInfo));
     int thcnt;
     for(thcnt=0;thcnt<numThreads;++thcnt)
     {
-        threads[thcnt].threadID = thcnt  ;
-        threads[thcnt].itemCnt  = 0      ;
-        threads[thcnt].tskBag   = TaskBag;
+        threads[thcnt].threadID     = thcnt  ;
+        threads[thcnt].itemCnt6U    = 0      ;
+        threads[thcnt].itemCntAllU  = 0      ;
+        threads[thcnt].tskBag       = TaskBag;
         pthread_create(&threads[thcnt].thread,NULL,ProcThread ,(void *) &threads[thcnt] );
     }
-
+    printf("-7-");
     //join the threads
     void *status;
     for (thcnt =0; thcnt<numThreads;++thcnt)
     {
         pthread_join(threads[thcnt].thread, &status);
     }
-
+    timing_stop();
     // get the count
     // sum the items
+    long long sumAllThreads6 =0;
     long long sumAllThreads =0;
     for (thcnt =0; thcnt<numThreads;++thcnt)
     {
-        sumAllThreads += threads[thcnt].itemCnt   ;
+        sumAllThreads6 += threads[thcnt].itemCnt6U   ;
+        sumAllThreads  += threads[thcnt].itemCntAllU;       ;
+        printf("Theread %d found %lld unique Items with 6 or more letters  \n",threads[thcnt].threadID, threads[thcnt].itemCnt6U  );
+        printf("Theread %d found %lld unique\n"                               ,threads[thcnt].threadID, threads[thcnt].itemCntAllU);
     }
-    printf( "\nUnique items with len greater than 6 %lld\n", sumAllThreads );
-
-    
      
+
+    printf( "\nUnique items with len greater than 6 %lld\n", sumAllThreads6);
+    printf( "\nTotal unique words %lld\n"                  , sumAllThreads );
+    print_timing();
+    FILE *fpout;
+    fpout = fopen(OutFileNM, "w");
+    // output text file
+    DisplayArray( fpout, inputData, resultsArray,  numStrings, FALSE);
     free(TaskBag);
     free(inputData);
     free(resultsArray);
@@ -159,6 +188,7 @@ long long  fillStringArray_All(FILE *file, char ** arr , long long flen, Task * 
 ///Fill string array and TaskBag
 long long  fillStringArray(FILE *file, char ** arr , long long flen, Task * TskBg) 
 {
+    
     fseek(file, 0, SEEK_SET);
     long long  i=0;
     char word[25];
@@ -201,16 +231,12 @@ int Unique( char * testString)
         }
     return retval;
 }
+
 /*
     char ** data   -  strings from file  
     int * uniqArr  -  the array with the unique data
     int numItems   -  number of data ites
-
     populates unique array with length of unique strings
-
-
-
-
 */
 void getUniques( char ** data, int * uniqArr, int numItems)
 {
@@ -295,15 +321,46 @@ void *ProcThread( void *arg)
             {
                 if(inParams->tskBag[toproc].uniqueCount[start]>=6)
                 {
-                    inParams->itemCnt++;
+                    inParams->itemCnt6U ++;
+                }
+                if(inParams->tskBag[toproc].uniqueCount[start]>0)
+                {
+                    inParams->itemCntAllU ++;
                 }
             }
         }
     }
-
-
-
-
-
-
 }
+
+void DisplayArray( FILE * outLocation, char ** arr,int * UniqueArr,  int DataLength, int dbg)
+{
+    long long  cnt=0;
+    fprintf( outLocation ,"ALL UNIQUE STRINGS\n"   );
+    for(;cnt<DataLength;cnt++)
+    {
+        if(dbg)
+        {
+            fprintf( outLocation ,"%s\n",arr[cnt]   );
+        }
+        else if(UniqueArr[cnt]>=6)
+        {
+            fprintf( outLocation ,"%s\n",arr[cnt]   );
+        }
+    }
+}
+
+
+
+
+/*
+    output
+     To summarize, your parallel program should have the following output: 
+1)the total number of words with 
+unique letters, 
+2)the number found by each worker, 
+3)the elapsed time for the compute phase, 
+4)and the words that contain at least 6 unique letters
+
+
+
+*/
