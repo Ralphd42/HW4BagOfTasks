@@ -3,7 +3,7 @@
 #include<string.h>
 #include <pthread.h>
 #include"timing.h"
-#define STRING_LENGTH 25
+#define STRING_LENGTH 30
 #define FALSE  0
 #define TRUE 1
 #define ASCTOIDX   97
@@ -86,7 +86,11 @@ int main( int argc, char *argv[] )
 
     int * resultsArray = malloc(sizeof(int) * numStrings);
      
-    fillStringArray(inFilep,inputData,numStrings, TaskBag);
+    int cnts =fillStringArray(inFilep,inputData,numStrings, TaskBag);
+    printf( "\n\n---%d---\n\n", cnts);
+    
+     printf( "\n\n---%c--%d-\n\n", TaskBag[2].letter, TaskBag[2].StartPos    );
+
     printf("-5-");
     getUniques( inputData, resultsArray, numStrings);
     timing_start();
@@ -188,7 +192,7 @@ long long  fillStringArray_All(FILE *file, char ** arr , long long flen, Task * 
 ///Fill string array and TaskBag
 long long  fillStringArray(FILE *file, char ** arr , long long flen, Task * TskBg) 
 {
-    
+
     fseek(file, 0, SEEK_SET);
     long long  i=0;
     char word[25];
@@ -198,10 +202,12 @@ long long  fillStringArray(FILE *file, char ** arr , long long flen, Task * TskB
     int tbidx=0;
     while((i<flen) && (fgets(word, STRING_LENGTH, file) )    ) 
 	{
+        
         if( word[0]>=97 && word[0]<=122 )
         {
+           
             if( currentchr!= word[0])
-            {   
+            {    printf("\n%s %c %c %s \n", word,currentchr,word[0], arr[i-1]);
                 TskBg[tbidx].EndPos=(i-1);        
                 currentchr = word[0];
                 tbidx = currentchr - ASCTOIDX;
