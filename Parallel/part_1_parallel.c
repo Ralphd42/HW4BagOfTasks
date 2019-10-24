@@ -18,6 +18,7 @@ typedef struct Task
     int * uniqueCount;
     char ** dataarr;
 }Task;
+
 // the info needed by a thread
 typedef struct ThreadInfo
 {
@@ -27,6 +28,7 @@ typedef struct ThreadInfo
     Task * tskBag; 
     pthread_t thread;  
 }ThreadInfo;
+
 // mutexes for thread  sychronization
 pthread_mutex_t sycnBagidx        = PTHREAD_MUTEX_INITIALIZER;
 
@@ -52,23 +54,14 @@ int isLOwerCase(char* str);
 //main
 int main( int argc, char *argv[] )  
 {
-    printf("-1-\n\n");
-   
     if(argc<3)
     {
         perror("\nUsage ./part_1_parallel.out <inputfile.csv> <threadCount>\n");
         exit(-1);
     }
-    printf(" %s %s %s\n\n",argv[0],argv[1],argv[2]);
     
-    char* one = argv[2];
-    printf("-2a-");
-    int tst= atoi(one);
-    printf("-2b-");
-    //exit(-1);
-    int numThreads =tst;//atoi(argv[2]);
-    printf("-2-");
-    
+    char* thcntS = argv[2];
+    int numThreads = atoi(thcntS);
     char ** inputData;
     char * infile = argv[1];
     
@@ -88,15 +81,15 @@ int main( int argc, char *argv[] )
     int * resultsArray = malloc(sizeof(int) * numStrings);
      
     int cnts =fillStringArray(inFilep,inputData,numStrings, TaskBag);
-    printf( "\n\n---%d---\n\n", cnts);
-    
-     printf( "\n\n---%c--%d-\n\n", TaskBag[2].letter, TaskBag[2].StartPos    );
-
-    printf("-5-");
     getUniques( inputData, resultsArray, numStrings);
     timing_start();
-    printf("-6-");
     curProcTask=0;
+    int tbcnt;
+    for(tbcnt=0;tbcnt<26;++tbcnt)
+    {
+        TaskBag[tbcnt].dataarr     = inputData;
+        TaskBag[tbcnt].uniqueCount = resultsArray;
+    }
     ThreadInfo * threads = (ThreadInfo *)malloc (numThreads * sizeof(ThreadInfo));
     int thcnt;
     for(thcnt=0;thcnt<numThreads;++thcnt)
@@ -107,16 +100,13 @@ int main( int argc, char *argv[] )
         threads[thcnt].tskBag       = TaskBag;
         pthread_create(&threads[thcnt].thread,NULL,ProcThread ,(void *) &threads[thcnt] );
     }
-    printf("-7-");
-    //join the threads
     void *status;
     for (thcnt =0; thcnt<numThreads;++thcnt)
     {
         pthread_join(threads[thcnt].thread, &status);
     }
     timing_stop();
-    // get the count
-    // sum the items
+    
     long long sumAllThreads6 =0;
     long long sumAllThreads =0;
     for (thcnt =0; thcnt<numThreads;++thcnt)
@@ -128,8 +118,8 @@ int main( int argc, char *argv[] )
     }
      
 
-    printf( "\nUnique items with len greater than 6 %lld\n", sumAllThreads6);
-    printf( "\nTotal unique words %lld\n"                  , sumAllThreads );
+    printf( "Unique items with len greater than 6 %lld\n", sumAllThreads6);
+    printf( "Total unique words %lld\n"                  , sumAllThreads );
     print_timing();
     FILE *fpout;
     fpout = fopen(OutFileNM, "w");
@@ -164,15 +154,11 @@ long long  getUsableFileLength( FILE *file )
     fseek(file, 0, SEEK_SET);
     int cnt =0;
     int buffsz = 1028;
-    //while (fgets(word,STRING_LENGTH,file))
+     
     char * word = (char *)malloc(buffsz * sizeof(char));
-      size_t size = buffsz;
+    size_t size ;
     while (getline(&word,&size,file)>=0)
     {
-        int len = strlen(word);
-        if( word[len-1] == '\n'  || word[len-1] == '\r')
-            word[len-1] = 0;
-        //if( word[0]>=97 && word[0]<=122 )
         if(isLOwerCase(word)) 
         {
             ++cnt;
@@ -213,22 +199,21 @@ long long  fillStringArray(FILE *file, char ** arr , long long flen, Task * TskB
     char * word = (char *)malloc(buffsz * sizeof(char));
     while((i<flen) && (getline(&word,&size,file)>=0 )    ) 
 	{
-        int len = strlen(word);
-        if( word[len-1] == '\n' )
-            word[len-1] = 0;
+        
         if( isLOwerCase(word) )
         {
-           
-          // printf("\n!!%s %c %c  \n", word,currentchr,word[0] );
             if( currentchr!= word[0])
-            {    printf("\n%s %c %c %s \n", word,currentchr,word[0], arr[i-1]);
+            {    
                 TskBg[tbidx].EndPos=(i-1);
-                         
                 currentchr = word[0];
                 tbidx = currentchr - ASCTOIDX;
-                TskBg[tbidx].StartPos=(i-1);
+                if(TskBg[tbidx].StartPos==0) // only set if hasn't been set
+                {
+                    TskBg[tbidx].StartPos=i;
+                }
                 TskBg[tbidx].letter = currentchr;
-            }strncpy(arr[i],word,STRING_LENGTH);
+            }
+            strncpy(arr[i],word,STRING_LENGTH);
             arr[i][strlen(arr[i]) - 1] = '\0';
             i++;
         }
@@ -289,6 +274,7 @@ void ShowArray (char ** arr, long long  len)
     }
     printf("END Items in array"   );
 }
+
 void TestUnique(char ** arr, int arrsz)
 {
     int numtotest =arrsz;
@@ -304,6 +290,7 @@ void TestUnique(char ** arr, int arrsz)
     }
     printf("END Items in array"   );
 }
+
 long long getCountUniqueSix(int * uniqArr,char ** dataArr, int numItems)
 {
    FILE * outFilep = fopen(OutFileNM, "w");
@@ -371,21 +358,28 @@ void DisplayArray( FILE * outLocation, char ** arr,int * UniqueArr,  int DataLen
         }
     }
 }
+/*
+    get rid of all items over 25 characters in length
+    get rid of all uppercase and random symbols
+*/
 int isLOwerCase(char* str) {
-
-    int   i;
-
+    int retval =TRUE;
     int len = strlen(str);
-        if( str[len-1] == '\n' || str[len-1] == '\r')
-            str[len-1] = 0;
-    for (int i = 0; str[i] != '\0'; i++) {
+    if( str[len-1] == '\n' || str[len-1] == '\r')
+        str[len-1] = 0;
+    len = strlen(str);
+    if(len>STRING_LENGTH)
+    {
+        retval = FALSE;
+    }
+    for (int i = 0; str[i] != '\0' && retval  ; i++) 
+    {
         if(!(str[i] >= 'a' && str[i] <= 'z'))
         {
-           // printf("|%s-%c|\n", str, str[i]);
-            return FALSE;
+             retval =FALSE;
         }
     }
-    return TRUE;
+    return retval;
 
 }
 
