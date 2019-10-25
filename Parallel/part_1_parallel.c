@@ -196,7 +196,7 @@ long long  fillStringArray(FILE *file, char ** arr , long long flen, Task * TskB
     TskBg[0].StartPos=0;
     TskBg[0].letter='a';
     int tbidx=0;
-      size_t size;// = buffsz;
+    size_t size;// = buffsz;
     char * word = (char *)malloc(buffsz * sizeof(char));
     while((i<flen) && (getline(&word,&size,file)>=0 )    ) 
 	{
@@ -330,13 +330,16 @@ void *ProcThread( void *arg)
             int start = inParams->tskBag[toproc].StartPos;
             for( ;start<= inParams->tskBag[toproc].EndPos;++start)
             {
-                if(inParams->tskBag[toproc].uniqueCount[start]>=6)
+                if(inParams->tskBag[0].dataarr[start][0]==inParams->tskBag[toproc].letter)
                 {
-                    inParams->itemCnt6U ++;
-                }
-                if(inParams->tskBag[toproc].uniqueCount[start]>0)
-                {
-                    inParams->itemCntAllU ++;
+                    if(inParams->tskBag[toproc].uniqueCount[start]>=6)
+                    {
+                        inParams->itemCnt6U ++;
+                    }
+                    if(inParams->tskBag[toproc].uniqueCount[start]>0)
+                    {
+                        inParams->itemCntAllU ++;
+                    }
                 }
             }
         }
