@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS =   
+CFLAGS =    -std=c99
 LDFLAGS = 
 OBJFILES = part_1_serial.o timing.o
 TARGET = part_1_serial.out
