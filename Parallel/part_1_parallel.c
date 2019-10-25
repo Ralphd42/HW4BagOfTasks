@@ -332,13 +332,14 @@ void *ProcThread( void *arg)
             {
                 if(inParams->tskBag[0].dataarr[start][0]==inParams->tskBag[toproc].letter)
                 {
-                    if(inParams->tskBag[toproc].uniqueCount[start]>=6)
-                    {
-                        inParams->itemCnt6U ++;
-                    }
+                    
                     if(inParams->tskBag[toproc].uniqueCount[start]>0)
                     {
                         inParams->itemCntAllU ++;
+                        if(inParams->tskBag[toproc].uniqueCount[start]>=6)
+                        {
+                            inParams->itemCnt6U ++;
+                        }
                     }
                 }
             }

@@ -2,7 +2,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include"timing.h"
-#define STRING_LENGTH 25
+#define STRING_LENGTH 30
 #define FALSE  0
 #define TRUE 1
 const char *OutFileNM = "results";
@@ -16,6 +16,7 @@ int Unique( char * testString);
 void TestUnique(char ** arr, int arrsz);
 void getUniques( char ** data, int * uniqArr, int numItems);
 long long getCountUniqueSix(int * uniqArr,char ** dataArr, int numItems);
+int isLOwerCase(char* str);
 
 int main( int argc, char *argv[] )  
 {
@@ -34,20 +35,42 @@ int main( int argc, char *argv[] )
     printf("\n len = %lld\n",numStrings);
     fillStringArray(inFilep,inputData,numStrings);
     getUniques( inputData, resultsArray, numStrings);
-    long long itms =
-        getCountUniqueSix(resultsArray,inputData, numStrings);
+    timing_start(); 
+    int uqCnter;
+    long  numunique =0;
+    long numunique6=0;
+    for (uqCnter=0;uqCnter<=numStrings;uqCnter++)
+    {
+        if( resultsArray[uqCnter]>0)
+        {
+            numunique++;
+        }
+        if( resultsArray[uqCnter]>=6)
+        {
+            numunique6++;
+        }
+
+    }
+    timing_stop();
 
 
-    printf( "\nUnique items with len greater than 6 %d\n",itms );
 
-    //getCountUniqueSix
+    //long long itms =
+    //    getCountUniqueSix(resultsArray,inputData, numStrings);
+
+
+    printf( "\nUnique items with len greater than 6 %ld\n",numunique6 );
+    printf( "\nUnique items %ld\n"       ,numunique  );
+    print_timing();
     free(inputData);
     free(resultsArray);
     fclose(inFilep);
+
+
+
 }
-
-
-
+    //getCountUniqueSixint isLOwerCase(char* str) {
+    
 
 long long  getFileLength( FILE *file )
 {
@@ -68,10 +91,13 @@ long long  getUsableFileLength( FILE *file )
     
     fseek(file, 0, SEEK_SET);
     int cnt =0;
-    char word[25];
-    while (fgets(word,STRING_LENGTH,file))
+    int buffsz = 1028;
+     
+    char * word = (char *)malloc(buffsz * sizeof(char));
+    size_t size ;
+    while (getline(&word,&size,file)>=0)
     {
-        if( word[0]>=97 && word[0]<=122 )
+        if(isLOwerCase(word)) 
         {
             ++cnt;
         }
@@ -95,22 +121,69 @@ long long  fillStringArray_All(FILE *file, char ** arr , long long flen)
     return i;
 }
 
-long long  fillStringArray(FILE *file, char ** arr , long long flen)
+
+long long  fillStringArray(FILE *file, char ** arr , long long flen ) 
 {
+    int buffsz=1028;
+    printf("flen %lld \n\n ", flen);
     fseek(file, 0, SEEK_SET);
     long long  i=0;
-    char word[25];
-    while((i<flen) && (fgets(word, STRING_LENGTH, file) )    ) 
+    int tbidx=0;
+    size_t size;// = buffsz;
+    char * word = (char *)malloc(buffsz * sizeof(char));
+    while((i<flen) && (getline(&word,&size,file)>=0 )    ) 
 	{
-        if( word[0]>=97 && word[0]<=122 )
-        {
-            strcpy(arr[i],word);
+        if( isLOwerCase(word) )
+        {strncpy(arr[i],word,STRING_LENGTH);
             arr[i][strlen(arr[i]) - 1] = '\0';
             i++;
         }
-    } 
+    }
     return i;
 }
+
+
+int isLOwerCase(char* str) {
+    int retval =TRUE;
+    int len = strlen(str);
+    if( str[len-1] == '\n' || str[len-1] == '\r')
+        str[len-1] = 0;
+    len = strlen(str);
+    if(len>STRING_LENGTH)
+    {
+        retval = FALSE;
+    }
+    for (int i = 0; str[i] != '\0' && retval  ; i++) 
+    {
+        if(!(str[i] >= 'a' && str[i] <= 'z'))
+        {
+             retval =FALSE;
+        }
+    }
+    return retval;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int Unique( char * testString)
 {
